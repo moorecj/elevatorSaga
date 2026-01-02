@@ -1,14 +1,25 @@
 {
     init: function(elevators, floors) {
 
-        function goToFloorIfNotInQueue(elevator, floor) {
-            if (!elevator.destinationQueue.includes(floor)) {
-                console.log(`Elevator ${elevator.ElevatorNum}  Going to floor ${floor}`);
-                elevator.goToFloor(floor);
+        function goToFloorIfNotInAnyQueue(elevator, elevators, floorNum) {
+            if (floorNotInAnyQueue(elevators,floorNum)) {
+                console.log(`Elevator ${elevator.ElevatorNum}  Going to floor ${floorNum}`);
+                elevator.goToFloor(floorNum);
             }
-          }
+        }
+
+        function goToFloorIfNotInThisElevatorQueue(elevator, floorNum) {
+            if (floorNotInThisElevatorQueue(elevators,floorNum)) {
+                console.log(`Elevator ${elevator.ElevatorNum}  Going to floor ${floorNum}`);
+                elevator.goToFloor(floorNum);
+            }
+        }
         
-          function floorNotInAnyQueue(elevators, floorNum) {
+        function floorNotInThisElevatorQueue(elevator, floorNum){
+            !elevator.destinationQueue.includes(floorNum);
+        }
+
+        function floorNotInAnyQueue(elevators, floorNum) {
             // returns true if no elevators are going to this floor at the moment
             return !elevators.some(elevator => elevator.destinationQueue.includes(floorNum));
         }
@@ -23,13 +34,13 @@
             elevator.on("idle", function() {
                 if(floorGoingDownQueue.length>0){
                     const poppedFloor = floorGoingDownQueue.pop();
-                    goToFloorIfNotInQueue(elevator, poppedFloor);
+                    goToFloorIfNotInAnyQueue(elevator, elevators, poppedFloor);
                     return;
                 }
                 
                 if(floorGoingUpQueue.length>0){
                     const poppedFloor = floorGoingUpQueue.pop();
-                    goToFloorIfNotInQueue(elevator, poppedFloor);
+                    goToFloorIfNotInAnyQueue(elevator, elevators, poppedFloor);
                     return;
                 }
 
@@ -39,17 +50,17 @@
 
             elevator.on("floor_button_pressed", function(floorNum) {
                 console.log(`Elevator ${i} floor ${floorNum} pressed`);
-                goToFloorIfNotInQueue(elevator, floorNum);
+                goToFloorIfNotInThisElevatorQueue(elevator, floorNum);
             });
 
             elevator.on("passing_floor", function(floorNum, direction) { 
-                if(direction == 'down' && floorGoingDownQueue.find(fn => fn == floorNum)){
+                if(direction == 'down' && floorGoingDownQueue.includes(floorNum)){
                     floorGoingDownQueue = floorGoingDownQueue.filter(fn => fn != floorNum);
-                    goToFloorIfNotInQueue(elevator, floorNum);
+                    goToFloorIfNotInAnyQueue(elevator, elevators, floorNum);
                 }
-                else if(direction == 'up' && floorGoingUpQueue.find(fn => fn == floorNum)){   
+                else if(direction == 'up' && floorGoingUpQueue.includes(floorNum) ){   
                     floorGoingUpQueue = floorGoingDownQueue.filter(fn => fn != floorNum);
-                    goToFloorIfNotInQueue(elevator, floorNum);
+                    goToFloorIfNotInAnyQueue(elevator, elevators, floorNum);
                 }
              });
         }
@@ -59,7 +70,7 @@
             floor.on("up_button_pressed", function() {
                 if(idleElevatorQueue.length > 0 && floorNotInAnyQueue(elevators, floor.floorNum())){
                     var elevator = idleElevatorQueue.pop();
-                    goToFloorIfNotInQueue(elevator,floor.floorNum())
+                    goToFloorIfNotInAnyQueue(elevator, elevators, floor.floorNum())
                     return;
                 }
                 if(!floorGoingUpQueue.includes(floor.floorNum()))
@@ -69,7 +80,7 @@
             floor.on("down_button_pressed", function() { 
                 if(idleElevatorQueue.length > 0 && floorNotInAnyQueue(elevators, floor.floorNum())){
                     var elevator = idleElevatorQueue.pop();
-                    goToFloorIfNotInQueue(elevator,floor.floorNum())
+                    goToFloorIfNotInAnyQueue(elevator, elevators, floor.floorNum())
                     return;
                 }
 
